@@ -1,0 +1,17 @@
+[{
+	"Name": "romaji",
+	"Description": "**TODO**",
+	"Author": "Aki Kareha",
+	"Tags": ["input-method", "input", "romaji", "japanese", "kana"],
+	"Website": "https://github.com/akikareha/micro-romaji-plugin",
+	"License": "MIT",
+	"Versions": [
+		{
+			"Version": "0.0.0",
+			"Url": "https://github.com/akikareha/micro-romaji-plugin/archive/v0.0.0.zip",
+			"Require": {
+				"micro": ">=2.0.0"
+			}
+		}
+	]
+}]
