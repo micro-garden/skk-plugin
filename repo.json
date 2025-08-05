@@ -1,8 +1,8 @@
 [{
 	"Name": "romaji",
-	"Description": "**TODO**",
+	"Description": "A Japanese input method inspired by the SKK.",
 	"Author": "Aki Kareha",
-	"Tags": ["input-method", "input", "romaji", "japanese", "kana"],
+	"Tags": ["input-method", "input", "romaji", "japanese", "kana", "hiragana", "katakana", "skk"],
 	"Website": "https://github.com/akikareha/micro-romaji-plugin",
 	"License": "MIT",
 	"Versions": [

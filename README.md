@@ -1,8 +1,10 @@
 # Romaji Plugin for Micro
 
 **Romaji** is a plugin for the
-[micro](https://micro-editor.github.io/) text editor that
-**TODO**
+[micro](https://micro-editor.github.io/) text editor that provides a Japanese
+input method inspired by the SKK.
+It allows typing Japanese Hiragana and Katakana without relying on an external
+IME.
 
 See [help/romaji.md](help/romaji.md) for more details.
 

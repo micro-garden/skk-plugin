@@ -7,26 +7,29 @@ local config = import("micro/config")
 local TextEventInsert = 1
 local TextEventRemove = -1
 
--- conversion tables - concrete definitions are at the bottom of the file
+local DirectMode = 0
+local HiraganaMode = 1
+local KatakanaMode = 2
+
+--- conversion tables - concrete definitions are at the bottom of the file
+local romaji_to_kigou = {}
 local romaji_to_hiragana = {}
 local romaji_to_katakana = {}
-local sokuon = {}
+local romaji_to_sokuon = {}
+local romaji_to_n = {}
 
 -- states
-local romaji_mode = false
-local katakana_mode = false
+local romaji_mode = DirectMode
 local kana_buffer = ""
 
 local function show_mode(kana)
-	local mark
-	if romaji_mode then
-		if katakana_mode then
-			mark = "ア"
-		else
-			mark = "あ"
-		end
-	else
+	local mark = "??"
+	if romaji_mode == DirectMode then
 		mark = "aA"
+	elseif romaji_mode == HiraganaMode then
+		mark = "あ"
+	elseif romaji_mode == KatakanaMode then
+		mark = "ア"
 	end
 	if kana then
 		micro.InfoBar():Message(mark .. "[" .. kana .. "]")
@@ -36,8 +39,7 @@ local function show_mode(kana)
 end
 
 function RomajiCmd()
-	romaji_mode = true
-	katakana_mode = false
+	romaji_mode = HiraganaMode
 	kana_buffer = ""
 	show_mode()
 end
@@ -51,13 +53,17 @@ local function bytes_to_string(array)
 end
 
 function onBeforeTextEvent(buf, ev)
-	if not romaji_mode then
+	if romaji_mode == DirectMode then
 		return true
 	end
 
 	if ev.EventType == TextEventRemove and #kana_buffer > 0 then
 		kana_buffer = string.sub(kana_buffer, 1, -2)
 		show_mode()
+
+		local cursor = micro.CurPane().Buf:GetActiveCursor()
+		cursor:ResetSelection()
+		cursor.Loc.X = cursor.Loc.X + 1
 		return false
 	end
 
@@ -72,41 +78,60 @@ function onBeforeTextEvent(buf, ev)
 	-- Text is byte array
 	local text = bytes_to_string(ev.Deltas[1].Text)
 
+	if not romaji_to_kigou[text] and not text:match("^%a+$") then
+		return true
+	end
+
 	if #text ~= 1 then
 		return true
 	end
 
 	if text == "l" then
-		romaji_mode = false
+		romaji_mode = DirectMode
 		kana_buffer = ""
 		show_mode()
 		return false
 	end
 
 	if text == "q" then
-		katakana_mode = not katakana_mode
+		if romaji_mode == HiraganaMode then
+			romaji_mode = KatakanaMode
+		elseif romaji_mode == KatakanaMode then
+			romaji_mode = HiraganaMode
+		end
 		show_mode()
 		return false
 	end
 
 	kana_buffer = kana_buffer .. text
 
-	local kana
-	if sokuon[kana_buffer] then
-		if katakana_mode then
-			kana = "ッ"
-		else
-			kana = "っ"
-		end
-		kana_buffer = string.sub(kana_buffer, 2)
+	local kana = romaji_to_kigou[kana_buffer]
+	if kana then
+		kana_buffer = ""
 	else
-		if katakana_mode then
-			kana = romaji_to_katakana[kana_buffer]
+		if romaji_to_sokuon[kana_buffer] then
+			if romaji_mode == HiraganaMode then
+				kana = "っ"
+			elseif romaji_mode == KatakanaMode then
+				kana = "ッ"
+			end
+			kana_buffer = string.sub(kana_buffer, 2)
+		elseif romaji_to_n[kana_buffer] then
+			if romaji_mode == HiraganaMode then
+				kana = "ん"
+			elseif romaji_mode == KatakanaMode then
+				kana = "ン"
+			end
+			kana_buffer = string.sub(kana_buffer, 2)
 		else
-			kana = romaji_to_hiragana[kana_buffer]
-		end
-		if kana then
-			kana_buffer = ""
+			if romaji_mode == HiraganaMode then
+				kana = romaji_to_hiragana[kana_buffer]
+			elseif romaji_mode == KatakanaMode then
+				kana = romaji_to_katakana[kana_buffer]
+			end
+			if kana then
+				kana_buffer = ""
+			end
 		end
 	end
 
@@ -122,9 +147,15 @@ end
 
 function init()
 	config.MakeCommand("romaji", RomajiCmd, config.NoComplete)
-	config.TryBindKey("Ctrl-j", "lua:romaji.RomajiCmd", true)
+	config.TryBindKey("Ctrl-j", "lua:romaji.RomajiCmd", false)
 	config.AddRuntimeFile("romaji", config.RTHelp, "help/romaji.md")
 end
+
+romaji_to_kigou = {
+	["-"] = "ー",
+	[","] = "、",
+	["."] = "。",
+}
 
 romaji_to_hiragana = {
 	-- あ
@@ -532,7 +563,7 @@ romaji_to_katakana = {
 	["xtu"] = "ッ",
 }
 
-sokuon = {
+romaji_to_sokuon = {
 	["kk"] = true,
 	["ss"] = true,
 	["tt"] = true,
@@ -549,4 +580,23 @@ sokuon = {
 	["ff"] = true,
 	["vv"] = true,
 	["xx"] = true,
+}
+
+romaji_to_n = {
+	["nk"] = true,
+	["ns"] = true,
+	["nt"] = true,
+	["nh"] = true,
+	["nm"] = true,
+	["ny"] = true,
+	["nr"] = true,
+	["nw"] = true,
+	["ng"] = true,
+	["nz"] = true,
+	["nd"] = true,
+	["nb"] = true,
+	["np"] = true,
+	["nf"] = true,
+	["nv"] = true,
+	["nx"] = true,
 }
