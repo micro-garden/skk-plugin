@@ -18,6 +18,7 @@ local AlphabetMode = 3 -- wide alphabet
 local romaji_to_kigou = {}
 local romaji_to_hiragana = {}
 local romaji_to_katakana = {}
+local romaji_aliases = {}
 local romaji_is_sokuon = {}
 local romaji_is_n = {}
 local romaji_to_alphabet = {} -- wide alphabet
@@ -123,7 +124,9 @@ function onBeforeTextEvent(buf, ev)
 		romaji_mode = DirectMode
 		kana_buffer = ""
 		show_mode()
-		return false
+
+		ev.Deltas[1].Text = ""
+		return true
 	elseif text == "q" then
 		if romaji_mode == HiraganaMode then
 			romaji_mode = KatakanaMode
@@ -131,15 +134,19 @@ function onBeforeTextEvent(buf, ev)
 			romaji_mode = HiraganaMode
 		else -- program error
 			micro.InfoBar():Error("q: invalid mode = " .. romaji_mode)
-			return false
+			return true
 		end
 		show_mode()
-		return false
+
+		ev.Deltas[1].Text = ""
+		return true
 	elseif text == "L" then
 		romaji_mode = AlphabetMode
 		kana_buffer = ""
 		show_mode()
-		return false
+
+		ev.Deltas[1].Text = ""
+		return true
 	end
 
 	kana_buffer = kana_buffer .. text
@@ -169,27 +176,33 @@ function onBeforeTextEvent(buf, ev)
 			end
 			kana_buffer = string.sub(kana_buffer, 2)
 		else
+			local lookup = kana_buffer
+			if romaji_aliases[lookup] then
+				lookup = romaji_aliases[lookup]
+			end
+
 			if romaji_mode == HiraganaMode then
-				kana = romaji_to_hiragana[kana_buffer]
+				kana = romaji_to_hiragana[lookup]
 			elseif romaji_mode == KatakanaMode then
-				kana = romaji_to_katakana[kana_buffer]
+				kana = romaji_to_katakana[lookup]
 			else -- program error
 				micro.InfoBar():Error("kana: invalid mode = " .. romaji_mode)
 				return false
 			end
+
 			if kana then
 				kana_buffer = ""
 			end
 		end
 	end
 
+	show_mode(kana)
+
 	if kana then
 		ev.Deltas[1].Text = kana
 	else
 		ev.Deltas[1].Text = ""
 	end
-
-	show_mode(kana)
 	return true
 end
 
@@ -409,6 +422,12 @@ romaji_to_hiragana = {
 	["xyo"] = "ょ",
 	-- っ
 	["xtu"] = "っ",
+	-- extensions
+	["xwa"] = "ゎ",
+	["xwi"] = "ゐ",
+	["xwe"] = "ゑ",
+	--
+	["xvo"] = "ゔょ",
 }
 
 romaji_to_katakana = {
@@ -612,6 +631,54 @@ romaji_to_katakana = {
 	["xyo"] = "ョ",
 	-- ッ
 	["xtu"] = "ッ",
+	-- extensions
+	["xwa"] = "ヮ",
+	["xwi"] = "ヰ",
+	["xwe"] = "ヱ",
+	--
+	["xvo"] = "ヴョ",
+}
+
+romaji_aliases = {
+	-- basic
+	["shi"] = "si",
+	["chi"] = "ti",
+	["tsu"] = "tu",
+	["fu"] = "hu",
+	["ji"] = "zi",
+	["dzu"] = "du",
+	--
+	["sha"] = "sya",
+	["shu"] = "syu",
+	["she"] = "sye",
+	["sho"] = "syo",
+	--
+	["cha"] = "tya",
+	["chu"] = "tyu",
+	["che"] = "tye",
+	["cho"] = "tyo",
+	--
+	["ja"] = "zya",
+	["ju"] = "zyu",
+	["je"] = "zye",
+	["jo"] = "zyo",
+	-- others
+	["cya"] = "tya",
+	["cyu"] = "tyu",
+	["cyo"] = "tyo",
+	--
+	["jya"] = "zya",
+	["jyu"] = "zyu",
+	["jyo"] = "zyo",
+	-- English-like
+	["ca"] = "ka",
+	["ci"] = "si",
+	["cu"] = "ku",
+	["ce"] = "se",
+	["co"] = "ko",
+	-- extensions
+	["xwu"] = "xu", -- u (IBus SKK)
+	["xwo"] = "wo", -- o (IBus SKK)
 }
 
 romaji_is_sokuon = {
@@ -631,6 +698,9 @@ romaji_is_sokuon = {
 	["ff"] = true,
 	["vv"] = true,
 	["xx"] = true,
+	-- extensions
+	["cc"] = true,
+	["jj"] = true,
 }
 
 romaji_is_n = {
