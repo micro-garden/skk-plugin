@@ -2,21 +2,27 @@
 
 **Romaji** is a plugin that provides a Japanese input method inspired by the
 SKK.
-It allows typing Japanese Hiragana and Katakana without relying on an external
-input method (IME).
+It allows typing Japanese Hiragana, Katakana, and full-width (Zenkaku) Latin
+characters **without any external input method (IME)**.
 
 ## Features
 
 - Romaji (Latin alphabet) to Kana (Hiragana/Katakana) conversion
-- Toggle between Hiragana and Katakana modes
+- Toggle between:
+    - Hiragana mode
+    - Katakana mode
+    - Zenkaku alphabet mode (full-width Latin)
+    - Direct mode (no conversion)
 - Insert common Japanese punctuation (、 。 ー)
 - Handles small Kana (ぁぃぅ etc.), double consonants (っ), and "ん"
 - Input buffer is shown in the info bar
-- Minimalist and terminal-friendly design
+- Works in terminal-only environments (no GUI/IME needed)
 
 ## Usage
 
 ### Start Romaji Input Mode
+
+### Start Kana Input Mode
 
 Press: `Ctrl-j`
 
@@ -28,27 +34,32 @@ romaji
 
 This switches to **Hiragana input mode** by default.
 
-### Exit to Direct Input Mode
+### Mode Switching (In Kana Mode)
 
-Type: `l`
-
-This cancels Kana input and returns to normal typing (Latin characters).
-
-### Switch between Hiragana and Katakana
-
-Type: `q`
-
-This toggles between Hiragana and Katakana modes.
+| Key | Action                          |
+| --- | ------------------------------- |
+| `l` | Exit to Direct Mode             |
+| `q` | Toggle Hiragana <--> Katakana   |
+| `L` | Switch to Zenkaku Alphabet Mode |
 
 ### Input Examples
 
-| Input | Output (Hiragana) | Output (Katakana) |
-| ----- | ----------------- | ----------------- |
-| aiueo | あいうえお        | アイウエオ        |
-| kana  | かな              | カナ              |
-| nn    | ん                | ン                |
-| kko   | っこ              | ッコ              |
-| , . - | 、 。 ー          | Same              |
+| Input | Hiragana          | Katakana          | Zenkaku Alphabet |
+| ----- | ----------------- | ----------------- | ---------------- |
+| aiueo | あいうえお        | アイウエオ        | ａｉｕｅｏ       |
+| kana  | かな              | カナ              | ｋａｎａ         |
+| nn    | ん                | ン                | ｎｎ             |
+| kko   | っこ              | ッコ              | ｋｋｏ           |
+| , . - | 、 。 ー          | Same              | ，．−            |
+
+## Modes
+
+| Mode           | Mark   | Description                          |
+| -------------- | ------ | ------------------------------------ |
+| Direct Mode    | `aA`   | No conversion (default typing)       |
+| Hiragana Mode  | `あ`   | Romaji -> Hiragana conversion        |
+| Katakana Mode  | `ア`   | Romaji -> Katakana conversion        |
+| Alphabet Mode  | `ａＡ` | ASCII -> Full-width alphabet/numbers |
 
 ## Notes
 
@@ -56,11 +67,16 @@ This toggles between Hiragana and Katakana modes.
 - It does **not** perform Kanji conversion.
 - The conversion buffer is reset when a match is found or when exiting input
   mode.
+- Still under development.
+- Ideal for remote environments or minimal systems without IME.
 
 ## Key Bindings
 
-| Key    | Action                         |
-| ------ | ------------------------------ |
-| Ctrl-j | Start Romaji (Kana) input mode |
-| l      | Exit to direct input mode      |
-| q      | Toggle Hiragana/Katakana       |
+| Key       | Function                          |
+| --------- | --------------------------------- |
+| `Ctrl-j`  | Enter Hiragana Input Mode         |
+| `l`       | Exit to Direct Mode               |
+| `q`       | Toggle Hiragana <--> Katakana     |
+| `L`       | Switch to Zenkaku Alphabet Mode   |
+
+Note that use `Ctrl-j` to exit from Zenkaku Alphabet mode to Hiragana mode.

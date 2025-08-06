@@ -1,35 +1,44 @@
-VERSION = "0.0.0"
+VERSION = "0.0.1"
 
 local micro = import("micro")
 local config = import("micro/config")
 
--- constants
+-- internal constants
 local TextEventInsert = 1
+local TextEventReplace = 0
 local TextEventRemove = -1
 
-local DirectMode = 0
+-- romaji modes
+local DirectMode = 0 -- no conversion
 local HiraganaMode = 1
 local KatakanaMode = 2
+local AlphabetMode = 3 -- wide alphabet
 
 --- conversion tables - concrete definitions are at the bottom of the file
 local romaji_to_kigou = {}
 local romaji_to_hiragana = {}
 local romaji_to_katakana = {}
-local romaji_to_sokuon = {}
-local romaji_to_n = {}
+local romaji_is_sokuon = {}
+local romaji_is_n = {}
+local romaji_to_alphabet = {} -- wide alphabet
 
 -- states
 local romaji_mode = DirectMode
 local kana_buffer = ""
 
 local function show_mode(kana)
-	local mark = "??"
+	local mark
 	if romaji_mode == DirectMode then
 		mark = "aA"
 	elseif romaji_mode == HiraganaMode then
 		mark = "あ"
 	elseif romaji_mode == KatakanaMode then
 		mark = "ア"
+	elseif romaji_mode == AlphabetMode then
+		mark = "ａＡ"
+	else -- program error
+		micro.InfoBar():Error("show_mode: invalid mode = " .. romaji_mode)
+		return
 	end
 	if kana then
 		micro.InfoBar():Message(mark .. "[" .. kana .. "]")
@@ -57,17 +66,28 @@ function onBeforeTextEvent(buf, ev)
 		return true
 	end
 
-	if ev.EventType == TextEventRemove and #kana_buffer > 0 then
-		kana_buffer = string.sub(kana_buffer, 1, -2)
-		show_mode()
+	if ev.EventType == TextEventRemove then
+		if #kana_buffer > 0 then
+			-- expects only backspace
+			kana_buffer = string.sub(kana_buffer, 1, -2)
+			show_mode()
 
-		local cursor = micro.CurPane().Buf:GetActiveCursor()
-		cursor:ResetSelection()
-		cursor.Loc.X = cursor.Loc.X + 1
-		return false
+			local cursor = micro.CurPane().Buf:GetActiveCursor()
+			cursor:ResetSelection()
+			cursor.Loc.X = cursor.Loc.X + 1
+			return false
+		else
+			return true
+		end
 	end
 
-	if ev.EventType ~= TextEventInsert then
+	if ev.EventType == TextEventReplace then
+		return true
+	end
+
+	-- assert
+	if ev.EventType ~= TextEventInsert then -- program error
+		micro.InfoBar():Error("Invalid text event type = ev.EventType")
 		return true
 	end
 
@@ -78,10 +98,23 @@ function onBeforeTextEvent(buf, ev)
 	-- Text is byte array
 	local text = bytes_to_string(ev.Deltas[1].Text)
 
-	if not romaji_to_kigou[text] and not text:match("^%a+$") then
+	if romaji_mode == AlphabetMode then
+		local alphabet = romaji_to_alphabet[text]
+		if alphabet then
+			ev.Deltas[1].Text = alphabet
+		end
 		return true
 	end
 
+	-- now in Hiragana or Katakana mode
+
+	if not romaji_to_kigou[text] then
+		if not text:match("^%a+$") then
+			return true
+		end
+	end
+
+	-- pass through pasted long text
 	if #text ~= 1 then
 		return true
 	end
@@ -91,14 +124,20 @@ function onBeforeTextEvent(buf, ev)
 		kana_buffer = ""
 		show_mode()
 		return false
-	end
-
-	if text == "q" then
+	elseif text == "q" then
 		if romaji_mode == HiraganaMode then
 			romaji_mode = KatakanaMode
 		elseif romaji_mode == KatakanaMode then
 			romaji_mode = HiraganaMode
+		else -- program error
+			micro.InfoBar():Error("q: invalid mode = " .. romaji_mode)
+			return false
 		end
+		show_mode()
+		return false
+	elseif text == "L" then
+		romaji_mode = AlphabetMode
+		kana_buffer = ""
 		show_mode()
 		return false
 	end
@@ -109,18 +148,24 @@ function onBeforeTextEvent(buf, ev)
 	if kana then
 		kana_buffer = ""
 	else
-		if romaji_to_sokuon[kana_buffer] then
+		if romaji_is_sokuon[kana_buffer] then
 			if romaji_mode == HiraganaMode then
 				kana = "っ"
 			elseif romaji_mode == KatakanaMode then
 				kana = "ッ"
+			else -- program error
+				micro.InfoBar():Error("sokuon: invalid mode = " .. romaji_mode)
+				return false
 			end
 			kana_buffer = string.sub(kana_buffer, 2)
-		elseif romaji_to_n[kana_buffer] then
+		elseif romaji_is_n[kana_buffer] then
 			if romaji_mode == HiraganaMode then
 				kana = "ん"
 			elseif romaji_mode == KatakanaMode then
 				kana = "ン"
+			else -- program error
+				micro.InfoBar():Error("n: invalid mode = " .. romaji_mode)
+				return false
 			end
 			kana_buffer = string.sub(kana_buffer, 2)
 		else
@@ -128,6 +173,9 @@ function onBeforeTextEvent(buf, ev)
 				kana = romaji_to_hiragana[kana_buffer]
 			elseif romaji_mode == KatakanaMode then
 				kana = romaji_to_katakana[kana_buffer]
+			else -- program error
+				micro.InfoBar():Error("kana: invalid mode = " .. romaji_mode)
+				return false
 			end
 			if kana then
 				kana_buffer = ""
@@ -563,7 +611,7 @@ romaji_to_katakana = {
 	["xtu"] = "ッ",
 }
 
-romaji_to_sokuon = {
+romaji_is_sokuon = {
 	["kk"] = true,
 	["ss"] = true,
 	["tt"] = true,
@@ -582,7 +630,7 @@ romaji_to_sokuon = {
 	["xx"] = true,
 }
 
-romaji_to_n = {
+romaji_is_n = {
 	["nk"] = true,
 	["ns"] = true,
 	["nt"] = true,
@@ -599,4 +647,77 @@ romaji_to_n = {
 	["nf"] = true,
 	["nv"] = true,
 	["nx"] = true,
+}
+
+romaji_to_alphabet = { -- wide alphabet
+	-- lower letters
+	["a"] = "ａ",
+	["b"] = "ｂ",
+	["c"] = "ｃ",
+	["d"] = "ｄ",
+	["e"] = "ｅ",
+	["f"] = "ｆ",
+	["g"] = "ｇ",
+	["h"] = "ｈ",
+	["i"] = "ｉ",
+	["j"] = "ｊ",
+	["k"] = "ｋ",
+	["l"] = "ｌ",
+	["m"] = "ｍ",
+	["n"] = "ｎ",
+	["o"] = "ｏ",
+	["p"] = "ｐ",
+	["q"] = "ｑ",
+	["r"] = "ｒ",
+	["s"] = "ｓ",
+	["t"] = "ｔ",
+	["u"] = "ｕ",
+	["v"] = "ｖ",
+	["w"] = "ｗ",
+	["x"] = "ｘ",
+	["y"] = "ｙ",
+	["z"] = "ｚ",
+	-- upper letters
+	["A"] = "Ａ",
+	["B"] = "Ｂ",
+	["C"] = "Ｃ",
+	["D"] = "Ｄ",
+	["E"] = "Ｅ",
+	["F"] = "Ｆ",
+	["G"] = "Ｇ",
+	["H"] = "Ｈ",
+	["I"] = "Ｉ",
+	["J"] = "Ｊ",
+	["K"] = "Ｋ",
+	["L"] = "Ｌ",
+	["M"] = "Ｍ",
+	["N"] = "Ｎ",
+	["O"] = "Ｏ",
+	["P"] = "Ｐ",
+	["Q"] = "Ｑ",
+	["R"] = "Ｒ",
+	["S"] = "Ｓ",
+	["T"] = "Ｔ",
+	["U"] = "Ｕ",
+	["V"] = "Ｖ",
+	["W"] = "Ｗ",
+	["X"] = "Ｘ",
+	["Y"] = "Ｙ",
+	["Z"] = "Ｚ",
+	-- symbols
+	["-"] = "−",
+	[","] = "，",
+	["."] = "．",
+	[" "] = "　",
+	-- numbers
+	["0"] = "０",
+	["1"] = "１",
+	["2"] = "２",
+	["3"] = "３",
+	["4"] = "４",
+	["5"] = "５",
+	["6"] = "６",
+	["7"] = "７",
+	["8"] = "８",
+	["9"] = "９",
 }
