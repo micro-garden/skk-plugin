@@ -10,6 +10,10 @@ if not package.path:find(plug_path, 1, true) then
 end
 
 local romaji = require("romaji")
+local jisyo = require("jisyo")
+local test = require("test")
+
+local d
 
 -- internal constants
 local TextEventInsert = 1
@@ -48,6 +52,10 @@ local function show_mode(kana)
 end
 
 function Skk()
+	if not d then
+		d = skk.load(config.ConfigDir .. "/SKK-JISYO.S")
+	end
+
 	romaji_mode = HiraganaMode
 	kana_buffer = ""
 	show_mode()
@@ -205,8 +213,14 @@ function onBeforeTextEvent(buf, ev)
 	return true
 end
 
+function SkkTest()
+	test.run()
+end
+
 function init()
 	config.MakeCommand("skk", Skk, config.NoComplete)
 	config.TryBindKey("Ctrl-j", "lua:skk.Skk", false)
 	config.AddRuntimeFile("skk", config.RTHelp, "help/skk.md")
+
+	config.MakeCommand("skktest", SkkTest, config.NoComplete)
 end

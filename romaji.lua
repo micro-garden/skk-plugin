@@ -1,5 +1,3 @@
-M = {}
-
 local to_kigou = {
 	[","] = "、",
 	["-"] = "ー",
@@ -615,6 +613,8 @@ local to_alphabet = { -- wide alphabet
 -------------
 -- Exports --
 -------------
+
+local M = {}
 
 M.to_kigou = to_kigou
 M.to_hiragana = to_hiragana
