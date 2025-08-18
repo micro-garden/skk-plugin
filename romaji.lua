@@ -1,218 +1,6 @@
-VERSION = "0.0.1"
+M = {}
 
-local micro = import("micro")
-local config = import("micro/config")
-
--- internal constants
-local TextEventInsert = 1
-local TextEventReplace = 0
-local TextEventRemove = -1
-
--- romaji modes
-local DirectMode = 0 -- no conversion
-local HiraganaMode = 1
-local KatakanaMode = 2
-local AlphabetMode = 3 -- wide alphabet
-
---- conversion tables - concrete definitions are at the bottom of the file
-local romaji_to_kigou = {}
-local romaji_to_hiragana = {}
-local romaji_to_katakana = {}
-local romaji_aliases = {}
-local romaji_is_sokuon = {}
-local romaji_is_n = {}
-local romaji_to_alphabet = {} -- wide alphabet
-
--- states
-local romaji_mode = DirectMode
-local kana_buffer = ""
-
-local function show_mode(kana)
-	local mark
-	if romaji_mode == DirectMode then
-		mark = "aA"
-	elseif romaji_mode == HiraganaMode then
-		mark = "あ"
-	elseif romaji_mode == KatakanaMode then
-		mark = "ア"
-	elseif romaji_mode == AlphabetMode then
-		mark = "ａＡ"
-	else -- program error
-		micro.InfoBar():Error("show_mode: invalid mode = " .. romaji_mode)
-		return
-	end
-	if kana then
-		micro.InfoBar():Message(mark .. "[" .. kana .. "]")
-	else
-		micro.InfoBar():Message(mark .. "[" .. kana_buffer .. "]")
-	end
-end
-
-function RomajiCmd()
-	romaji_mode = HiraganaMode
-	kana_buffer = ""
-	show_mode()
-end
-
-local function bytes_to_string(array)
-	local buf = {}
-	for i = 1, #array do
-		table.insert(buf, string.char(array[i]))
-	end
-	return table.concat(buf)
-end
-
-function onBeforeTextEvent(buf, ev)
-	if romaji_mode == DirectMode then
-		return true
-	end
-
-	if ev.EventType == TextEventRemove then
-		if #kana_buffer > 0 then
-			-- expects only backspace
-			kana_buffer = string.sub(kana_buffer, 1, -2)
-			show_mode()
-
-			local cursor = micro.CurPane().Buf:GetActiveCursor()
-			cursor:ResetSelection()
-			cursor.Loc.X = cursor.Loc.X + 1
-			return false
-		else
-			return true
-		end
-	end
-
-	if ev.EventType == TextEventReplace then
-		return true
-	end
-
-	-- assert
-	if ev.EventType ~= TextEventInsert then -- program error
-		micro.InfoBar():Error("Invalid text event type = ev.EventType")
-		return true
-	end
-
-	if #ev.Deltas ~= 1 then
-		return true
-	end
-
-	-- Text is byte array
-	local text = bytes_to_string(ev.Deltas[1].Text)
-
-	if romaji_mode == AlphabetMode then
-		local alphabet = romaji_to_alphabet[text]
-		if alphabet then
-			ev.Deltas[1].Text = alphabet
-		end
-		return true
-	end
-
-	-- now in Hiragana or Katakana mode
-
-	if not romaji_to_kigou[text] then
-		if not text:match("^%a+$") then
-			return true
-		end
-	end
-
-	-- pass through pasted long text
-	if #text ~= 1 then
-		return true
-	end
-
-	if text == "l" then
-		romaji_mode = DirectMode
-		kana_buffer = ""
-		show_mode()
-
-		ev.Deltas[1].Text = ""
-		return true
-	elseif text == "q" then
-		if romaji_mode == HiraganaMode then
-			romaji_mode = KatakanaMode
-		elseif romaji_mode == KatakanaMode then
-			romaji_mode = HiraganaMode
-		else -- program error
-			micro.InfoBar():Error("q: invalid mode = " .. romaji_mode)
-			return true
-		end
-		show_mode()
-
-		ev.Deltas[1].Text = ""
-		return true
-	elseif text == "L" then
-		romaji_mode = AlphabetMode
-		kana_buffer = ""
-		show_mode()
-
-		ev.Deltas[1].Text = ""
-		return true
-	end
-
-	kana_buffer = kana_buffer .. text
-
-	local kana = romaji_to_kigou[kana_buffer]
-	if kana then
-		kana_buffer = ""
-	else
-		if romaji_is_sokuon[kana_buffer] then
-			if romaji_mode == HiraganaMode then
-				kana = "っ"
-			elseif romaji_mode == KatakanaMode then
-				kana = "ッ"
-			else -- program error
-				micro.InfoBar():Error("sokuon: invalid mode = " .. romaji_mode)
-				return false
-			end
-			kana_buffer = string.sub(kana_buffer, 2)
-		elseif romaji_is_n[kana_buffer] then
-			if romaji_mode == HiraganaMode then
-				kana = "ん"
-			elseif romaji_mode == KatakanaMode then
-				kana = "ン"
-			else -- program error
-				micro.InfoBar():Error("n: invalid mode = " .. romaji_mode)
-				return false
-			end
-			kana_buffer = string.sub(kana_buffer, 2)
-		else
-			local lookup = kana_buffer
-			if romaji_aliases[lookup] then
-				lookup = romaji_aliases[lookup]
-			end
-
-			if romaji_mode == HiraganaMode then
-				kana = romaji_to_hiragana[lookup]
-			elseif romaji_mode == KatakanaMode then
-				kana = romaji_to_katakana[lookup]
-			else -- program error
-				micro.InfoBar():Error("kana: invalid mode = " .. romaji_mode)
-				return false
-			end
-
-			if kana then
-				kana_buffer = ""
-			end
-		end
-	end
-
-	show_mode(kana)
-
-	if kana then
-		ev.Deltas[1].Text = kana
-	else
-		ev.Deltas[1].Text = ""
-	end
-	return true
-end
-
-function init()
-	config.MakeCommand("romaji", RomajiCmd, config.NoComplete)
-	config.TryBindKey("Ctrl-j", "lua:romaji.RomajiCmd", false)
-	config.AddRuntimeFile("romaji", config.RTHelp, "help/romaji.md")
-end
-
-romaji_to_kigou = {
+local to_kigou = {
 	[","] = "、",
 	["-"] = "ー",
 	["."] = "。",
@@ -221,7 +9,7 @@ romaji_to_kigou = {
 	["~"] = "〜", -- ~ (IBus SKK)
 }
 
-romaji_to_hiragana = {
+local to_hiragana = {
 	-- あ
 	["a"] = "あ",
 	["i"] = "い",
@@ -430,7 +218,7 @@ romaji_to_hiragana = {
 	["xvo"] = "ゔょ",
 }
 
-romaji_to_katakana = {
+local to_katakana = {
 	-- ア
 	["a"] = "ア",
 	["i"] = "イ",
@@ -639,7 +427,7 @@ romaji_to_katakana = {
 	["xvo"] = "ヴョ",
 }
 
-romaji_aliases = {
+local aliases = {
 	-- basic
 	["shi"] = "si",
 	["chi"] = "ti",
@@ -681,7 +469,7 @@ romaji_aliases = {
 	["xwo"] = "wo", -- o (IBus SKK)
 }
 
-romaji_is_sokuon = {
+local is_sokuon = {
 	["kk"] = true,
 	["ss"] = true,
 	["tt"] = true,
@@ -703,7 +491,7 @@ romaji_is_sokuon = {
 	["jj"] = true,
 }
 
-romaji_is_n = {
+local is_n = {
 	["nk"] = true,
 	["ns"] = true,
 	["nt"] = true,
@@ -722,7 +510,7 @@ romaji_is_n = {
 	["nx"] = true,
 }
 
-romaji_to_alphabet = { -- wide alphabet
+local to_alphabet = { -- wide alphabet
 	-- lower letters
 	["a"] = "ａ",
 	["b"] = "ｂ",
@@ -823,3 +611,17 @@ romaji_to_alphabet = { -- wide alphabet
 	["8"] = "８",
 	["9"] = "９",
 }
+
+-------------
+-- Exports --
+-------------
+
+M.to_kigou = to_kigou
+M.to_hiragana = to_hiragana
+M.to_katakana = to_katakana
+M.aliases = aliases
+M.is_sokuon = is_sokuon
+M.is_n = is_n
+M.to_alphabet = to_alphabet
+
+return M

@@ -1,21 +1,14 @@
 [{
-	"Name": "romaji",
+	"Name": "skk",
 	"Description": "A Japanese input method inspired by the SKK.",
 	"Author": "Aki Kareha",
-	"Tags": ["input-method", "input", "romaji", "japanese", "kana", "hiragana", "katakana", "skk"],
-	"Website": "https://github.com/akikareha/micro-romaji-plugin",
+	"Tags": ["input-method", "input", "romaji", "japanese", "kana", "hiragana", "katakana", "kanji", "skk"],
+	"Website": "https://github.com/akikareha/micro-skk-plugin",
 	"License": "MIT",
 	"Versions": [
 		{
-			"Version": "0.0.1",
-			"Url": "https://github.com/akikareha/micro-romaji-plugin/archive/v0.0.1.zip",
-			"Require": {
-				"micro": ">=2.0.0"
-			}
-		},
-		{
 			"Version": "0.0.0",
-			"Url": "https://github.com/akikareha/micro-romaji-plugin/archive/v0.0.0.zip",
+			"Url": "https://github.com/akikareha/micro-skk-plugin/archive/v0.0.0.zip",
 			"Require": {
 				"micro": ">=2.0.0"
 			}
