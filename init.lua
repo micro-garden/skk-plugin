@@ -9,6 +9,7 @@ if not package.path:find(plug_path, 1, true) then
 	package.path = package.path .. ";" .. plug_path
 end
 
+local download = require("download")
 local romaji = require("romaji")
 local jisyo = require("jisyo")
 local test = require("test")
@@ -59,6 +60,10 @@ function Skk()
 	romaji_mode = HiraganaMode
 	kana_buffer = ""
 	show_mode()
+end
+
+function SkkGet()
+	download.defaults()
 end
 
 local function bytes_to_string(array)
@@ -219,6 +224,7 @@ end
 
 function init()
 	config.MakeCommand("skk", Skk, config.NoComplete)
+	config.MakeCommand("skkget", SkkGet, config.NoComplete)
 	config.TryBindKey("Ctrl-j", "lua:skk.Skk", false)
 	config.AddRuntimeFile("skk", config.RTHelp, "help/skk.md")
 
