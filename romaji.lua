@@ -495,7 +495,6 @@ local is_n = {
 	["nt"] = true,
 	["nh"] = true,
 	["nm"] = true,
-	["ny"] = true,
 	["nr"] = true,
 	["nw"] = true,
 	["ng"] = true,

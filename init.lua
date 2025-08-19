@@ -1,4 +1,4 @@
-VERSION = "0.0.3"
+VERSION = "0.0.4"
 
 local micro = import("micro")
 local config = import("micro/config")
@@ -41,6 +41,7 @@ local conv_buffer = ""
 local conv_list = nil
 local conv_index = 1
 local conv_cand = ""
+local conv_okuri = ""
 
 local function show_mode()
 	local mark
@@ -66,7 +67,14 @@ local function show_mode()
 		end
 	end
 
-	micro.InfoBar():Message("[" .. mark .. "]" .. head .. kana_buffer)
+	local buf
+	if #conv_okuri > 0 then
+		buf = conv_okuri
+	else
+		buf = kana_buffer
+	end
+
+	micro.InfoBar():Message("[" .. mark .. "]" .. head .. buf)
 end
 
 local function reset_conv()
@@ -75,6 +83,7 @@ local function reset_conv()
 	conv_list = nil
 	conv_index = 1
 	conv_cand = ""
+	conv_okuri = ""
 end
 
 function Skk()
@@ -88,7 +97,8 @@ function Skk()
 
 	if conv_mode ~= CONV_NONE then
 		local out = (conv_cand ~= "" and conv_cand) or conv_buffer
-		if out and #out > 0 then
+		out = out .. conv_okuri
+		if #out > 0 then
 			local buf = micro.CurPane().Buf
 			local cursor = buf:GetActiveCursor()
 			local loc = buffer.Loc(cursor.X, cursor.Y)
@@ -130,6 +140,14 @@ local function utf8_chop(s)
 	return ""
 end
 
+local vowels = {
+	["あ"] = "a",
+	["い"] = "i",
+	["う"] = "u",
+	["え"] = "e",
+	["お"] = "o",
+}
+
 function onBeforeTextEvent(buf, ev)
 	if romaji_mode == DIRECT_MODE then
 		return true
@@ -139,6 +157,14 @@ function onBeforeTextEvent(buf, ev)
 	if ev.EventType == TEXT_EVENT_REMOVE then
 		if #kana_buffer > 0 then
 			kana_buffer = string.sub(kana_buffer, 1, -2)
+			show_mode()
+
+			local cursor = micro.CurPane().Buf:GetActiveCursor()
+			cursor:ResetSelection()
+			cursor.X = cursor.X + 1
+			return false
+		elseif #conv_okuri > 0 then
+			conv_okuri = utf8_chop(conv_okuri)
 			show_mode()
 
 			local cursor = micro.CurPane().Buf:GetActiveCursor()
@@ -204,6 +230,7 @@ function onBeforeTextEvent(buf, ev)
 
 		if conv_mode ~= CONV_NONE then
 			local out = conv_cand ~= "" and conv_cand or conv_buffer
+			out = out .. conv_okuri
 			output = output .. out
 			reset_conv()
 		end
@@ -215,6 +242,7 @@ function onBeforeTextEvent(buf, ev)
 
 	if text == "\n" and conv_mode ~= CONV_NONE then
 		local out = conv_cand ~= "" and conv_cand or conv_buffer
+		out = out .. conv_okuri
 		output = output .. out
 		reset_conv()
 
@@ -243,9 +271,30 @@ function onBeforeTextEvent(buf, ev)
 				return true
 			end
 		else
-			conv_index = (conv_index % #conv_list) + 1
+			conv_index = conv_index + 1
+			if conv_index > #conv_list then
+				conv_index = #conv_list
+			end
 		end
 		conv_cand = conv_list[conv_index] or ""
+		conv_cand = conv_cand:match("^([^;]*)")
+
+		show_mode()
+		delta.Text = output
+		return true
+	end
+
+	if text == "x" and conv_list then
+		conv_index = conv_index - 1
+		if conv_index < 1 then
+			conv_list = nil
+			conv_index = 1
+			conv_cand = ""
+			conv_okuri = ""
+		else
+			conv_cand = conv_list[conv_index] or ""
+			conv_cand = conv_cand:match("^([^;]*)")
+		end
 
 		show_mode()
 		delta.Text = output
@@ -253,8 +302,16 @@ function onBeforeTextEvent(buf, ev)
 	end
 
 	if #conv_cand > 0 then
-		output = output .. conv_cand
-		reset_conv()
+		if conv_mode == CONV_OKURI then
+			if #conv_okuri > 0 and not conv_okuri:match("っ$") and not conv_okuri:match("ッ$") then
+				output = output .. conv_cand .. conv_okuri
+				reset_conv()
+				kana_buffer = ""
+			end
+		else
+			output = output .. conv_cand .. conv_okuri
+			reset_conv()
+		end
 	end
 
 	if text:match("^[A-Z]$") then
@@ -268,6 +325,15 @@ function onBeforeTextEvent(buf, ev)
 
 	local kigou = romaji.to_kigou[text]
 	if kigou then
+		if conv_mode ~= CONV_NONE and kigou == "ー" then
+			if not conv_list then
+				conv_buffer = conv_buffer .. kigou
+				show_mode()
+				delta.Text = output
+				return true
+			end
+		end
+
 		kana_buffer = ""
 		show_mode()
 		delta.Text = output .. kigou
@@ -337,19 +403,18 @@ function onBeforeTextEvent(buf, ev)
 			bell.fatal("kana: invalid mode = " .. romaji_mode)
 			kana = nil
 		end
-
 		if kana then
 			kana_buffer = ""
 		end
 	end
 
 	if conv_mode == CONV_NONE then
-		show_mode()
 		if kana then
 			delta.Text = output .. kana
 		else
 			delta.Text = output
 		end
+		show_mode()
 		return true
 	elseif conv_mode == CONV_START then
 		if kana then
@@ -362,29 +427,34 @@ function onBeforeTextEvent(buf, ev)
 		delta.Text = output
 		return true
 	elseif conv_mode == CONV_OKURI then
-		if kana then
-			kana_buffer = ""
-			delta.Text = output .. conv_cand .. kana
-			reset_conv()
-			show_mode()
-			return true
+		local vowel = vowels[kana]
+		if vowel then
+			conv_buffer = conv_buffer .. vowel
+			conv_okuri = conv_okuri .. kana
+		elseif kana then
+			conv_okuri = conv_okuri .. kana
 		else
 			conv_buffer = conv_buffer .. text
+		end
 
-			if not d then
-				micro.InfoBar():Message("Please wait.. Loading SKK dictionaries..")
-				delta.Text = output
-				return true
-			end
-
-			conv_list = d:lookup_okuri(conv_buffer)
-			conv_index = 1
-			conv_cand = conv_list[conv_index] or ""
-
-			show_mode()
+		if not d then
+			micro.InfoBar():Message("Please wait.. Loading SKK dictionaries..")
 			delta.Text = output
 			return true
 		end
+
+		conv_list = d:lookup_okuri(conv_buffer)
+
+		conv_index = 1
+		conv_cand = conv_list[conv_index] or ""
+		conv_cand = conv_cand:match("^([^;]*)")
+
+		show_mode()
+		delta.Text = output
+		return true
+	else
+		bell.fatal("skk: invalid conv mode = " .. conv_mode)
+		return true
 	end
 end
 
