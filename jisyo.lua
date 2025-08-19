@@ -91,7 +91,7 @@ local function load(path)
 
 	-- Lookup for okuri-nasi (no okuri): returns an array of candidates or nil
 	function dict:lookup(reading)
-		return self.okuri_nasi[reading]
+		return self.okuri_nasi[reading] or {}
 	end
 
 	-- Lookup for okuri-ari:
@@ -101,7 +101,7 @@ local function load(path)
 	function dict:lookup_okuri(key, okuri_kana)
 		local e = self.okuri_ari[key]
 		if not e then
-			return nil
+			return {}
 		end
 		if okuri_kana and e.blocks and e.blocks[okuri_kana] and #e.blocks[okuri_kana] > 0 then
 			return e.blocks[okuri_kana]
