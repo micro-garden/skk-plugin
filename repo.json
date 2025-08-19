@@ -7,8 +7,8 @@
 	"License": "MIT",
 	"Versions": [
 		{
-			"Version": "0.0.0",
-			"Url": "https://github.com/akikareha/micro-skk-plugin/archive/v0.0.0.zip",
+			"Version": "0.0.2",
+			"Url": "https://github.com/akikareha/micro-skk-plugin/archive/v0.0.2.zip",
 			"Require": {
 				"micro": ">=2.0.0"
 			}

@@ -64,7 +64,7 @@ local function skk_dicts(names)
 	end
 end
 
-function defaults()
+local function defaults()
 	skk_dicts({
 		"SKK-JISYO.L",
 		"SKK-JISYO.propernoun",

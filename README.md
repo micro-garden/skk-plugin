@@ -2,9 +2,10 @@
 
 **SKK** is a plugin for the
 [micro](https://micro-editor.github.io/) text editor that provides a Japanese
-input method inspired by the SKK.
+input method inspired by the SKK.  
 It allows typing Japanese Hiragana, Katakana, and full-width (Zenkaku) Latin
-characters **without any external input method (IME)**.
+characters **without any external input method (IME)**.  
+Hiragana can be converted to Kanji by using SKK dictionaries.
 
 See [help/skk.md](help/skk.md) for more details.
 

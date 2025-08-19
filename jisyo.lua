@@ -19,7 +19,7 @@ local function trim(s)
 	return (s:gsub("^%s+", ""):gsub("%s+$", ""))
 end
 
-function load(path)
+local function load(path)
 	local dict = { okuri_ari = {}, okuri_nasi = {} }
 
 	local fp = io.open(path, "rb")

@@ -506,6 +506,8 @@ local is_n = {
 	["nf"] = true,
 	["nv"] = true,
 	["nx"] = true,
+	-- extensions
+	["nj"] = true,
 }
 
 local to_alphabet = { -- wide alphabet

@@ -1,9 +1,10 @@
 # SKK Plugin
 
 **SKK** is a plugin that provides a Japanese input method inspired by the
-SKK.
+SKK.  
 It allows typing Japanese Hiragana, Katakana, and full-width (Zenkaku) Latin
-characters **without any external input method (IME)**.
+characters **without any external input method (IME)**.  
+Hiragana can be converted to Kanji by using SKK dictionaries.
 
 ## Features
 
@@ -15,6 +16,7 @@ characters **without any external input method (IME)**.
     - Direct mode (no conversion)
 - Insert common Japanese punctuation (、 。 ー)
 - Handles small Kana (ぁぃぅ etc.), double consonants (っ), and "ん"
+- Hiragana can be converted to Kanji by using SKK dictionaries
 - Input buffer is shown in the info bar
 - Works in terminal-only environments (no GUI/IME needed)
 
@@ -60,6 +62,16 @@ This switches to **Hiragana input mode** by default.
 | Hiragana Mode  | `あ`   | Romaji -> Hiragana conversion        |
 | Katakana Mode  | `ア`   | Romaji -> Katakana conversion        |
 | Alphabet Mode  | `ａＡ` | ASCII -> Full-width alphabet/numbers |
+
+## Kanji
+
+To install SKK dictionaries, run:
+
+```
+skkget
+```
+
+Then you can convert Hiragana to Kanji by using SKK method.
 
 ## Notes
 
