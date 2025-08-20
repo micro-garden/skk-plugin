@@ -5,6 +5,9 @@ local to_kigou = {
 	['"'] = "”", -- " (IBus SKK)
 	["'"] = "’", -- ' (IBus SKK)
 	["~"] = "〜", -- ~ (IBus SKK)
+	["["] = "「",
+	["]"] = "」",
+	["?"] = "？",
 }
 
 local to_hiragana = {
