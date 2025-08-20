@@ -1,4 +1,4 @@
-VERSION = "0.0.4"
+VERSION = "0.0.5"
 
 local micro = import("micro")
 local config = import("micro/config")
@@ -14,6 +14,7 @@ local bell = require("skk/bell")
 local download = require("skk/download")
 local romaji = require("skk/romaji")
 local jisyo = require("skk/jisyo")
+local kana = require("skk/kana")
 
 local d
 
@@ -114,6 +115,28 @@ function Skk()
 	if d then
 		show_mode()
 	end
+end
+
+function SkkDirect(pane)
+	romaji_mode = DIRECT_MODE
+	kana_buffer = ""
+
+	if conv_mode ~= CONV_NONE then
+		local out = conv_cand ~= "" and conv_cand or conv_buffer
+		out = out .. conv_okuri
+
+		if #out > 0 then
+			local buf = pane.Buf
+			local cursor = buf:GetActiveCursor()
+			local loc = buffer.Loc(cursor.X, cursor.Y)
+			micro.CurPane().Buf:Insert(loc, out)
+		end
+
+		reset_conv()
+	end
+
+	show_mode()
+	return
 end
 
 function SkkGet()
@@ -347,23 +370,51 @@ function onBeforeTextEvent(buf, ev)
 	if text == "l" then
 		romaji_mode = DIRECT_MODE
 		kana_buffer = ""
+
+		if conv_mode ~= CONV_NONE then
+			local out = conv_cand ~= "" and conv_cand or conv_buffer
+			out = out .. conv_okuri
+			output = output .. out
+			reset_conv()
+		end
+
 		show_mode()
 		delta.Text = output
 		return true
 	end
 
 	if text == "q" then
-		if romaji_mode == HIRAGANA_MODE then
-			romaji_mode = KATAKANA_MODE
-		elseif romaji_mode == KATAKANA_MODE then
-			romaji_mode = HIRAGANA_MODE
-		else
-			bell.fatal("q: invalid mode = " .. romaji_mode)
+		if conv_mode == CONV_NONE then
+			if romaji_mode == HIRAGANA_MODE then
+				romaji_mode = KATAKANA_MODE
+			elseif romaji_mode == KATAKANA_MODE then
+				romaji_mode = HIRAGANA_MODE
+			else
+				bell.fatal("q: invalid mode = " .. romaji_mode)
+				return true
+			end
+			show_mode()
+			delta.Text = output
+			return true
+		elseif conv_mode == CONV_START then
+			if romaji_mode == HIRAGANA_MODE then
+				local kata = kana.to_kata(conv_buffer)
+				conv_list = { kata }
+				conv_index = 1
+				conv_cand = kata
+			elseif romaji_mode == KATAKANA_MODE then
+				local hira = kana.to_hira(conv_buffer)
+				conv_list = { hira }
+				conv_index = 1
+				conv_cand = hira
+			else
+				bell.fatal("q (conv): invalid mode = " .. romaji_mode)
+				return true
+			end
+			show_mode()
+			delta.Text = output
 			return true
 		end
-		show_mode()
-		delta.Text = output
-		return true
 	end
 
 	kana_buffer = kana_buffer .. text
@@ -460,6 +511,7 @@ end
 
 function init()
 	config.MakeCommand("skk", Skk, config.NoComplete)
+	config.MakeCommand("skkdirect", SkkDirect, config.NoComplete)
 	config.MakeCommand("skkget", SkkGet, config.NoComplete)
 	config.TryBindKey("Ctrl-j", "lua:skk.Skk", false)
 	config.AddRuntimeFile("skk", config.RTHelp, "help/skk.md")
