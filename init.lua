@@ -364,6 +364,17 @@ function onBeforeTextEvent(buf, ev)
 	end
 
 	if not text:match("^%a$") then
+		if conv_mode ~= CONV_NONE then
+			local out = conv_cand ~= "" and conv_cand or conv_buffer
+			out = out .. conv_okuri
+			output = output .. out
+			reset_conv()
+		end
+
+		if #output > 0 then
+			show_mode()
+		end
+		delta.Text = output .. text
 		return true
 	end
 
