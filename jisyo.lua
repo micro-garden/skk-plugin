@@ -55,7 +55,7 @@ local function load(path)
 
 					-- Parse top-level default candidates: /.../
 					local defaults = {}
-					for c in rest_wo_blocks:gmatch("/([^/]+)/") do
+					for c in rest_wo_blocks:gmatch("/([^/]+)") do
 						table.insert(defaults, c)
 					end
 
@@ -74,7 +74,7 @@ local function load(path)
 								local cand_part = blk:sub(#okuri + 2)
 
 								local arr = {}
-								for c in cand_part:gmatch("/([^/]+)/") do
+								for c in cand_part:gmatch("/([^/]+)") do
 									table.insert(arr, c)
 								end
 								entry.blocks[okuri] = arr
