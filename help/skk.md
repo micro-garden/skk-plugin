@@ -92,3 +92,33 @@ Then you can convert Hiragana to Kanji by using SKK method.
 | `L`       | Switch to Zenkaku Alphabet Mode   |
 
 Note that use `Ctrl-j` to exit from Zenkaku Alphabet mode to Hiragana mode.
+
+## Using SKK with the vi plugin
+
+When using the SKK-like plugin together with the vi-like plugin for micro,
+it is convenient to ensure that pressing **Esc** always does two things at
+once:
+
+1. Returns vi to **Normal mode** (also called **Command mode**)  
+2. Switches SKK back to **Direct input mode**
+
+This avoids situations where you leave Insert mode but SKK is still in a
+Japanese input state, which can cause unexpected behavior.
+
+### Recommended key bindings
+
+Add the following entries to your `bindings.json`:
+
+```json
+{
+  "Escape": "Escape,Deselect,ClearInfo,RemoveAllMultiCursors,UnhighlightSearch,lua:vi.Vi,lua:skk.SkkDirect",
+  "Ctrl-[": "Escape,Deselect,ClearInfo,RemoveAllMultiCursors,UnhighlightSearch,lua:vi.Vi,lua:skk.SkkDirect"
+}
+```
+
+### Why this works
+
+- The built-in micro commands (`Escape`, `Deselect`, etc.) clear
+  selections and highlights first.
+- `lua:vi.Vi` then puts the vi plugin into Normal mode.
+- Finally, `lua:skk.SkkDirect` ensures SKK is set to Direct input mode.
