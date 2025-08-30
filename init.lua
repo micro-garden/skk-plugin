@@ -1,4 +1,4 @@
-VERSION = "0.0.5"
+VERSION = "0.0.6"
 
 local micro = import("micro")
 local config = import("micro/config")
@@ -9,7 +9,6 @@ if not package.path:find(plug_path, 1, true) then
 	package.path = package.path .. ";" .. plug_path
 end
 
-local utils = require("skk/utils")
 local bell = require("skk/bell")
 local download = require("skk/download")
 local romaji = require("skk/romaji")
@@ -89,11 +88,10 @@ end
 
 function Skk()
 	if not d then
-		micro.InfoBar():Message("Please wait.. Loading SKK dictionaries..")
-		utils.next_tick(function()
-			d = jisyo.load(config.ConfigDir .. "/skk-dict/SKK-JISYO.L")
-			micro.InfoBar():Message("Done. SKK dictionaries loaded.")
-		end)
+		d, err = jisyo.open(config.ConfigDir .. "/skk-dict/SKK-JISYO.L.cdb")
+		if err then
+			micro.InfoBar():Error("Error in loading SKK dictionaries.")
+		end
 	end
 
 	if conv_mode ~= CONV_NONE then
@@ -276,7 +274,7 @@ function onBeforeTextEvent(buf, ev)
 
 	if text == " " and conv_mode ~= CONV_NONE then
 		if not d then
-			micro.InfoBar():Message("Please wait.. Loading SKK dictionaries..")
+			micro.InfoBar():Message("No SKK dictionaries.")
 			delta.Text = output
 			return true
 		end

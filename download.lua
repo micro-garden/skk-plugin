@@ -66,10 +66,10 @@ end
 
 local function defaults()
 	skk_dicts({
-		"SKK-JISYO.L",
-		"SKK-JISYO.propernoun",
-		"SKK-JISYO.geo",
-		"SKK-JISYO.jinmei",
+		"SKK-JISYO.L.cdb",
+		"SKK-JISYO.propernoun.cdb",
+		"SKK-JISYO.geo.cdb",
+		"SKK-JISYO.jinmei.cdb",
 	})
 end
 
