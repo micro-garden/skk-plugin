@@ -54,7 +54,7 @@ local function show_mode()
 	elseif romaji_mode == ALPHABET_MODE then
 		mark = "ａＡ"
 	else
-		bell.fatal("show_mode: invalid mode = " .. romaji_mode)
+		bell.program_error("invalid romaji_mode == " .. romaji_mode)
 		return
 	end
 
@@ -218,7 +218,7 @@ function onBeforeTextEvent(buf, ev)
 
 	-- assert
 	if ev.EventType ~= TEXT_EVENT_INSERT then
-		bell.fatal("Invalid text event type = " .. ev.EventType)
+		bell.program_error("invalid ev.EventType == " .. ev.EventType)
 		return true
 	end
 
@@ -399,7 +399,7 @@ function onBeforeTextEvent(buf, ev)
 			elseif romaji_mode == KATAKANA_MODE then
 				romaji_mode = HIRAGANA_MODE
 			else
-				bell.fatal("q: invalid mode = " .. romaji_mode)
+				bell.program_error("q: invalid romaji_mode == " .. romaji_mode)
 				return true
 			end
 			show_mode()
@@ -417,7 +417,7 @@ function onBeforeTextEvent(buf, ev)
 				conv_index = 1
 				conv_cand = hira
 			else
-				bell.fatal("q (conv): invalid mode = " .. romaji_mode)
+				bell.program_error("q (conv): invalid romaji_mode == " .. romaji_mode)
 				return true
 			end
 			show_mode()
@@ -435,7 +435,7 @@ function onBeforeTextEvent(buf, ev)
 		elseif romaji_mode == KATAKANA_MODE then
 			kana = "ッ"
 		else
-			bell.fatal("sokuon: invalid mode = " .. romaji_mode)
+			bell.program_error("sokuon: invalid romaji_mode == " .. romaji_mode)
 			kana = nil
 		end
 		kana_buffer = string.sub(kana_buffer, 2)
@@ -445,7 +445,7 @@ function onBeforeTextEvent(buf, ev)
 		elseif romaji_mode == KATAKANA_MODE then
 			kana = "ン"
 		else
-			bell.fatal("n: invalid mode = " .. romaji_mode)
+			bell.program_error("n: invalid romaji_mode == " .. romaji_mode)
 			kana = nil
 		end
 		kana_buffer = string.sub(kana_buffer, 2)
@@ -460,7 +460,7 @@ function onBeforeTextEvent(buf, ev)
 		elseif romaji_mode == KATAKANA_MODE then
 			kana = romaji.to_katakana[lookup]
 		else
-			bell.fatal("kana: invalid mode = " .. romaji_mode)
+			bell.program_error("kana: invalid romaji_mode == " .. romaji_mode)
 			kana = nil
 		end
 		if kana then
@@ -513,7 +513,7 @@ function onBeforeTextEvent(buf, ev)
 		delta.Text = output
 		return true
 	else
-		bell.fatal("skk: invalid conv mode = " .. conv_mode)
+		bell.program_error("onBeforeTextEvent: invalid conv_mode == " .. conv_mode)
 		return true
 	end
 end

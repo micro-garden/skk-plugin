@@ -24,13 +24,15 @@ local function strip_note(cand)
 	return body or cand
 end
 
-local function parse_skk_line(v)
-	v = trim(v)
+local function parse_skk_line(line)
+	line = trim(line)
+
 	local blocks = {}
-	local body = v:gsub("%b[]", function(b)
+	local body = line:gsub("%b[]", function(b)
 		blocks[#blocks + 1] = b:sub(2, -2)
 		return " "
 	end)
+
 	local defaults = {}
 	for c in body:gmatch("/([^/]+)") do
 		local t = strip_note(trim(c))
@@ -38,7 +40,20 @@ local function parse_skk_line(v)
 			defaults[#defaults + 1] = t
 		end
 	end
-	return { defaults = defaults, blocks = {} }
+
+	local per = {}
+	for _, blk in ipairs(blocks) do
+		local ok = blk:match("^([^/]+)/")
+		if ok then
+			local arr = {}
+			for c in blk:sub(#ok + 2):gmatch("/([^/]+)") do
+				arr[#arr + 1] = strip_note(trim(c))
+			end
+			per[ok] = arr
+		end
+	end
+
+	return { defaults = defaults, blocks = per }
 end
 
 local Dict = {}
