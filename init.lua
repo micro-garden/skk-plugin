@@ -1,4 +1,4 @@
-VERSION = "0.0.6"
+VERSION = "0.0.7"
 
 local micro = import("micro")
 local config = import("micro/config")
@@ -32,6 +32,7 @@ local ALPHABET_MODE = 3 -- wide alphabet
 local CONV_NONE = 0
 local CONV_START = 1
 local CONV_OKURI = 2
+local CONV_ENGLISH = 3
 
 -- states
 local romaji_mode = DIRECT_MODE
@@ -320,6 +321,36 @@ function onBeforeTextEvent(buf, ev)
 		show_mode()
 		delta.Text = output
 		return true
+	end
+
+	if text == "/" then
+		if conv_list then
+			local out = conv_cand ~= "" and conv_cand or conv_buffer
+			out = out .. conv_okuri
+			output = output .. out
+			reset_conv()
+		end
+
+		conv_mode = CONV_ENGLISH
+
+		show_mode()
+		delta.Text = output
+		return true
+	end
+
+	if conv_mode == CONV_ENGLISH then
+		if conv_list then
+			local out = conv_cand ~= "" and conv_cand or conv_buffer
+			out = out .. conv_okuri
+			output = output .. out
+			reset_conv()
+		else
+			conv_buffer = conv_buffer .. text
+
+			show_mode()
+			delta.Text = output
+			return true
+		end
 	end
 
 	if #conv_cand > 0 then

@@ -50,7 +50,7 @@ local function http_get_to_file(url, outpath)
 end
 
 local function skk_dicts(names)
-	local base = "https://raw.githubusercontent.com/akikareha/skk-dict-utf8/main/utf8/"
+	local base = "https://raw.githubusercontent.com/akikareha/skk-dict-utf8/main/e-v1/"
 	local saved = {}
 	for _, name in ipairs(names) do
 		local url = base .. name
