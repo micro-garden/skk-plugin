@@ -3,47 +3,47 @@
 	"Description": "A Japanese input method inspired by the SKK.",
 	"Author": "Aki Kareha",
 	"Tags": ["input-method", "input", "romaji", "japanese", "kana", "hiragana", "katakana", "kanji", "skk"],
-	"Website": "https://github.com/akikareha/micro-skk-plugin",
+	"Website": "https://github.com/micro-garden/skk-plugin",
 	"License": "MIT",
 	"Versions": [
 		{
 			"Version": "0.0.7",
-			"Url": "https://github.com/akikareha/micro-skk-plugin/archive/v0.0.7.zip",
+			"Url": "https://github.com/micro-garden/skk-plugin/archive/v0.0.7.zip",
 			"Require": {
 				"micro": ">=2.0.0"
 			}
 		},
 		{
 			"Version": "0.0.6",
-			"Url": "https://github.com/akikareha/micro-skk-plugin/archive/v0.0.6.zip",
+			"Url": "https://github.com/micro-garden/skk-plugin/archive/v0.0.6.zip",
 			"Require": {
 				"micro": ">=2.0.0"
 			}
 		},
 		{
 			"Version": "0.0.5",
-			"Url": "https://github.com/akikareha/micro-skk-plugin/archive/v0.0.5.zip",
+			"Url": "https://github.com/micro-garden/skk-plugin/archive/v0.0.5.zip",
 			"Require": {
 				"micro": ">=2.0.0"
 			}
 		},
 		{
 			"Version": "0.0.4",
-			"Url": "https://github.com/akikareha/micro-skk-plugin/archive/v0.0.4.zip",
+			"Url": "https://github.com/micro-garden/skk-plugin/archive/v0.0.4.zip",
 			"Require": {
 				"micro": ">=2.0.0"
 			}
 		},
 		{
 			"Version": "0.0.3",
-			"Url": "https://github.com/akikareha/micro-skk-plugin/archive/v0.0.3.zip",
+			"Url": "https://github.com/micro-garden/skk-plugin/archive/v0.0.3.zip",
 			"Require": {
 				"micro": ">=2.0.0"
 			}
 		},
 		{
 			"Version": "0.0.2",
-			"Url": "https://github.com/akikareha/micro-skk-plugin/archive/v0.0.2.zip",
+			"Url": "https://github.com/micro-garden/skk-plugin/archive/v0.0.2.zip",
 			"Require": {
 				"micro": ">=2.0.0"
 			}
